@@ -1,10 +1,11 @@
 package jwt
 
 import (
+	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
-	"github.com/google/martian/log"
 	"github.com/google/martian/parse"
 )
 
@@ -13,19 +14,17 @@ func init() {
 }
 
 type Modifier struct {
-	secret []byte
+	secret string
 }
 
 type modifierJSON struct {
-	Secret []byte               `json:"secret"`
+	Secret string               `json:"secret"`
 	Scope  []parse.ModifierType `json:"scope"`
 }
 
-// NewModifier constructs and returns a body.Modifier.
-func NewModifier(b []byte) *Modifier {
-	log.Debugf("len(b): %d, content: %s", len(b), string(b))
+func NewModifier(secret string) *Modifier {
 	return &Modifier{
-		secret: b,
+		secret: secret,
 	}
 }
 
@@ -40,11 +39,22 @@ func modifierFromJSON(b []byte) (*parse.Result, error) {
 }
 
 func (m *Modifier) ModifyResponse(res *http.Response) error {
-	log.Debugf("Modifier: %v", m)
+	nBody := &bytes.Buffer{}
+	nBody.Write([]byte("{secret: }" + m.secret))
 
-	res.Header.Add("Secret", string(m.secret))
-	// res.Body.Close()
-	// res.Body = ioutil.NopCloser(bytes.NewReader(m.secret))
+	newBody := ioutil.NopCloser(nBody)
+
+	newRes := &http.Response{
+		StatusCode: res.StatusCode,
+		Status:     res.Status,
+		Proto:      res.Proto,
+		ProtoMajor: res.ProtoMajor,
+		ProtoMinor: res.ProtoMinor,
+		Header:     res.Header,
+		Body:       newBody,
+		Request:    res.Request,
+	}
+	*res = *newRes
 
 	return nil
 }
