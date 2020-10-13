@@ -1,18 +1,3 @@
-// Copyright 2015 Google Inc. All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// Package body allows for the replacement of message body on responses.
 package jwt
 
 import (
@@ -21,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/google/martian/log"
 	"github.com/google/martian/parse"
 )
 
@@ -28,7 +14,6 @@ func init() {
 	parse.Register("jwt.Sign", modifierFromJSON)
 }
 
-// Modifier substitutes the body on an HTTP response.
 type Modifier struct {
 	secret []byte
 }
@@ -40,6 +25,7 @@ type modifierJSON struct {
 
 // NewModifier constructs and returns a body.Modifier.
 func NewModifier(b []byte) *Modifier {
+	log.Debugf("len(b): %d, content: %s", len(b), string(b))
 	return &Modifier{
 		secret: b,
 	}
@@ -55,9 +41,9 @@ func modifierFromJSON(b []byte) (*parse.Result, error) {
 	return parse.NewResult(mod, msg.Scope)
 }
 
-// ModifyResponse sets the Content-Type header and overrides the response body.
 func (m *Modifier) ModifyResponse(res *http.Response) error {
-	// Replace the existing body, close it first.
+	log.Debugf("Modifier: %v", m)
+
 	res.Body.Close()
 	res.Body = ioutil.NopCloser(bytes.NewReader(m.secret))
 
