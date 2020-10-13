@@ -1,9 +1,7 @@
 package jwt
 
 import (
-	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/google/martian/log"
@@ -44,8 +42,9 @@ func modifierFromJSON(b []byte) (*parse.Result, error) {
 func (m *Modifier) ModifyResponse(res *http.Response) error {
 	log.Debugf("Modifier: %v", m)
 
-	res.Body.Close()
-	res.Body = ioutil.NopCloser(bytes.NewReader(m.secret))
+	res.Header.Add("Secret", string(m.secret))
+	// res.Body.Close()
+	// res.Body = ioutil.NopCloser(bytes.NewReader(m.secret))
 
 	return nil
 }
